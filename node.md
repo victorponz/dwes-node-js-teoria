@@ -4,6 +4,28 @@ typora-copy-images-to: assets
 
 
 
+Poner en el aula virtual package.json y package.lock
+
+# Instalación de node
+
+Para instalar `node.js` 
+
+```
+sudo apt install nodejs
+```
+
+Y para instalar el gestor de paquetes `nmp` 
+
+```
+sudo apt install npm
+```
+
+Además vamos a instalar `nodemon`  para que rearranque automáticamente el servidor al realizar cualquier cambio en un archivo de la aplicación.
+
+```
+sudo npm install -g nodemon
+```
+
 ## Nuestra primera aplicación en Node.js
 
 Crea un fichero llamado `hello.js` con el siguiente contenido:
@@ -22,13 +44,11 @@ Si todo está correctamente instalado, producirá la siguiente salida:
 
 >  Hello, World!
 
-
-
-## El modelo de ejecución de Node.js
+## 1 El modelo de ejecución de Node.js
 
 En términos muy simplistas, cuando se conecta a un servidor tradicional, como Apache, generará un nuevo hilo para manejar la solicitud. En un lenguaje como PHP o Ruby, cualquier operación de E/S subsiguiente (por ejemplo, interactuar con un base de datos) bloquea la ejecución de tu código hasta que la operación haya finalizado. Es decir, el servidor debe esperar a que se complete la búsqueda de la base de datos antes de poder pasar a procesar el resultado. Si llegan nuevas solicitudes mientras esto está sucediendo, el servidor generará nuevos hilos para tratar con ellos. Esto es potencialmente ineficiente, ya que una gran cantidad de subprocesos puede hacer que un sistema se vuelva lento y, en el peor de los casos, que el sitio caiga. La forma más común de admitir más conexiones es agregar más servidores.
 
-`Node.js`, sin embargo, es de un solo hilo. También está dirigido por eventos, lo que significa que todo lo que sucede en `Node` es una reacción a un evento. Por ejemplo, cuando un llega una nueva solicitud (un tipo de evento) el servidor comenzará a procesarla. Si luego encuentra una operación de bloqueo de E/S, en lugar de esperar a que esto se complete, registrará una devolución de llamada antes de continuar procesando el próximo evento. Cuando la operación de E/S ha finalizado (otro tipo de evento), el servidor ejecutará la devolución de llamada (callback) y continuará trabajando en la solicitud original. Entre bambalinas, Node utiliza la biblioteca **libuv** para implementar este comportamiento asíncrono (es decir, sin bloqueo).
+`Node.js`, sin embargo, es de un solo hilo. También está dirigido por eventos, lo que significa que todo lo que sucede en `Node` es una reacción a un evento. Por ejemplo, cuando un llega una nueva solicitud (un tipo de evento) el servidor comenzará a procesarla. Si luego encuentra una operación de bloqueo de E/S, en lugar de esperar a que esta se complete, registrará una devolución de llamada antes de continuar procesando el próximo evento. Cuando la operación de E/S ha finalizado (otro tipo de evento), el servidor ejecutará la devolución de llamada (callback) y continuará trabajando en la solicitud original. Entre bambalinas, Node utiliza la biblioteca **libuv** para implementar este comportamiento asíncrono (es decir, sin bloqueo).
 
 El modelo de ejecución de Node causa al servidor una pequeña sobrecarga y, por lo tanto, es capaz de manejar un gran número de conexiones simultáneas. El enfoque tradicional para escalar una aplicación Node es clonarlo y hacer que las instancias clonadas compartan la carga de trabajo. Node.js incluso tiene un módulo incorporado para ayudarlo a implementar una estrategia de clonación en un solo servidor.
 
@@ -42,7 +62,7 @@ La siguiente imagen muestra el modelo de ejecución de Node:
 
 El hecho de que Node se ejecute en un solo hilo impone algunas limitaciones. Por ejemplo, se debe evitar el bloqueo de llamadas de E/S y los errores siempre deben manejarse correctamente ya que de lo contrario falla todo el proceso (es decir, el servidor se cae). A algunos desarrolladores también les disgusta el estilo de codificación basado en la devolución de llamada que impone JavaScript (hasta el punto de que incluso hay un sitio dedicado a los [horrores de escribir JavaScript asíncrono](http://callbackhell.com/)). Pero con la llegada de las promesas nativas, seguidas de cerca por `async await` (que está habilitada de forma predeterminada a partir de la versión 7.6 de Node), esto se está convirtiendo rápidamente en una cosa del pasado.
 
-## “Hello, World!” — Versión servidor
+## 2 “Hello, World!” — Versión servidor
 
 Vamos a ver un ejemplo básico de un servidor:
 
@@ -73,15 +93,41 @@ Abre un navegador y navega a http://localhost:3000 para ver "Hello, World!" en e
 
 Obviamente, hay mucho más para crear incluso un servidor simple en Node (por ejemplo, es importante manejar los errores correctamente), por lo que te recomiendo que consultes la [documentación](https://nodejs.org/en/docs/guides/anatomy-of-an-http-transaction/) si deseas obtener más información.
 
-## Fundamentos de nuestra aplicación de notas
+## 3 Fundamentos de nuestra aplicación de notas
 
-<video src="./assets/notas.m4v" />
+<video src="./assets/notas.m4v" controls='controls'/>
+
 Vamos a construir la funcionalidad básica de una aplicación para tomar notas usando la arquitectura MVC. Vamos a utilizar el framework de [Hapi.js](https://hapijs.com/) para Node.js y [SQLite](https://www.sqlite.org/index.html) como base de datos, utilizando [Sequelize.js](https://sequelize.readthedocs.io/en/v3/), además de otras pequeñas utilidades para acelerar nuestro desarrollo. Vamos a construir las vistas usando [Pug](https://pugjs.org/api/getting-started.html), el lenguaje de las plantillas.
 
 El primer paso al crear cualquier aplicación Node.js es crear un archivo `package.json`, que contendrá todas nuestras dependencias y scripts. En lugar de crear este archivo manualmente, `npm` puede hacer el trabajo por nosotros usando el comando `init`:
 
 ```
 npm init -y
+```
+
+El contenido del archivo es el siguiente:
+
+```json
+{
+  "name": "dwes-node-js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "hello-word-server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/victorponz/dwes-node-js.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/victorponz/dwes-node-js/issues"
+  },
+  "homepage": "https://github.com/victorponz/dwes-node-js#readme"
+}
 ```
 
 Vamos a proceder a instalar `Hapi.js`, el framework de elección para este tutorial. Proporciona un buen equilibrio entre simplicidad, estabilidad y disponibilidad de funciones que funcionará bien para nuestro caso de uso (aunque hay otras opciones que también funcionarán bien).
@@ -123,7 +169,7 @@ Esta será la base de nuestra aplicación.
 
 3. A continuación, creamos una función asíncrona desde la cual podemos iniciar nuestro servidor usando el método `server.start`. Luego, registramos un mensaje en la consola que indica que el servidor se está ejecutando e incluimos un código básico de manejo de errores, antes de iniciar el proceso llamando al método `init`.
 
-## Guardar nuestras configuraciones
+## 4 Guardar nuestras configuraciones
 
 Es una buena práctica almacenar nuestras variables de configuración en un archivo dedicado. Este archivo exporta un objeto JSON que contiene nuestros datos, donde cada clave se asigna desde una variable de entorno, pero sin olvidar un valor de reserva. En este archivo, también podemos tener diferentes configuraciones dependiendo de nuestro entorno (por ejemplo, desarrollo o producción). Por ejemplo, podemos tener una instancia en memoria de SQLite para fines de desarrollo, pero un archivo de base de datos real de SQLite para producción.
 
@@ -158,10 +204,10 @@ module.exports = {
 Ahora podemos iniciar nuestra aplicación ejecutando el siguiente comando y navegando a http://localhost:3000 en nuestro navegador web.
 
 ```
-node server.js
+nodemon server.js
 ```
 
-## Definir las rutas
+## 5 Definir las rutas
 
 La definición de rutas nos da una visión general de la funcionalidad admitida por nuestra aplicación. Para crear nuestras rutas adicionales, solo tenemos que replicar la estructura de la ruta que ya tenemos en nuestro archivo `server.js`, cambiando el contenido de cada una.
 
@@ -258,12 +304,12 @@ Para verificar que las cosas funcionan, reinicia el servidor y luego intenta vis
 
 El resto de rutas las probaremos más adelante con [Postman](https://www.getpostman.com/)
 
-## Crear los modelos
+## 6 Crear los modelos
 
 Los modelos nos permiten definir la estructura de los datos y todas las funciones para trabajar con ellos.
 En este ejemplo, vamos a utilizar la base de datos `SQLite` con `Sequelize.js`, que nos proporcionará una mejor interfaz mediante la técnica **ORM** (Mapeo Relacional de Objetos). También nos proporcionará una interfaz independiente de la base de datos.
 
-### Configurando la base de datos
+### 6.1 Configurando la base de datos
 
 Para esta sección, vamos a utilizar los paquetes `Sequelize.js` y `SQlite`. Puedes instalarlos e incluirlos como dependencias ejecutando el siguiente comando:
 
@@ -271,13 +317,14 @@ Para esta sección, vamos a utilizar los paquetes `Sequelize.js` y `SQlite`. Pue
 npm install -s sequelize sqlite3
 ```
 
-Ahora crea un directorio de modelos dentro del directorio `lib` y agrega un archivo llamado `index.js`. Esto contendrá la base de datos y la configuración de Sequelize.js. Agrega el siguiente contenido:
+Ahora crea un directorio de modelos `models` dentro del directorio `lib` y agrega un archivo llamado `index.js`. Esto contendrá la base de datos y la configuración de `Sequelize.js`. Agrega el siguiente contenido:
 
 ```javascript
 const Fs = require('fs');
 const Path = require('path');
 const Sequelize = require('sequelize');
 const Settings = require('../../settings');
+
 // Database settings for the current environment
 const dbSettings = Settings[Settings.env].db;
 const sequelize = new Sequelize(
@@ -307,11 +354,11 @@ module.exports = db;
 
 3. El objeto `db` se va a exportar y contendrá nuestros métodos de base de datos para cada modelo; estará disponible en nuestra aplicación cuando tengamos que hacer algo con nuestros datos.
 
-4. Para cargar todos los modelos, en lugar de definirlos manualmente, buscamos todos los archivos dentro del directorio `models` (con la excepción del archivo `index.js`) y los cargamos usando la función `import`. El objeto devuelto nos proporcionará los métodos CRUD, que luego agregaremos al objeto `db`.
+4. Para cargar todos los modelos, en lugar de definirlos manualmente, buscamos todos los archivos dentro del directorio `models` (con la excepción del archivo `index.js`) y los cargamos usando la función `require`. El objeto devuelto nos proporcionará los métodos CRUD, que luego agregaremos al objeto `db`.
 
 5. Al final, agregamos las propiedades `sequelize` y `Sequelize` a nuestro objeto `db`. El primero se usa en nuestro servidor `server.js` para una base de datos antes de iniciar el servidor, y el segundo se incluye para tu comodidad.
 
-## Creando nuestro modelo de nota
+## 7 Creando nuestro modelo de nota
 
 En esta sección, vamos a utilizar el paquete `Moment.js` para ayudar con el formato de fecha. Puedes instalarlo e incluirlo como una dependencia con el siguiente comando:
 
@@ -351,7 +398,7 @@ module.exports = (sequelize, DataTypes) => {
 
 Ahora que hemos terminado nuestros modelos, a continuación, sincronizaremos nuestra base de datos para que podamos usarla en la aplicación.
 
-## Sincronizar la base de datos
+## 8 Sincronizar la base de datos
 
 Ahora, tenemos que sincronizar nuestra base de datos antes de poder utilizarla en nuestra aplicación. En `server.js`, importa los modelos en la parte superior del archivo:
 
@@ -375,7 +422,7 @@ Models.sequelize.sync().then(() => {
 
 Este código sincronizará los modelos con nuestra base de datos y, una vez hecho esto, el método `init` iniciará todo. Hacer las cosas de esta manera significa que no saturamos la aplicación mientras utilizamos las funciones de `Sequelize`.
 
-## Crear los controladores
+## 9 Crear los controladores
 
 Los controladores son funciones que aceptan el objeto `request` y el `response tool kit` de Hapi.js. El objeto `request` contiene información sobre el recurso solicitado y usamos métodos del kit de herramientas de respuesta para devolver información al cliente.
 
@@ -383,7 +430,7 @@ En nuestra aplicación, vamos a devolver solo un objeto JSON por ahora, pero agr
 
 Podemos pensar en los controladores como funciones que unirán nuestros modelos con nuestros puntos de vista; se comunicarán con nuestros modelos para obtener los datos y luego los devolverán dentro de una vista.
 
-### El controlador Home
+### 9.1 El controlador Home
 
 El primer controlador que vamos a construir manejará la página de inicio de nuestro sitio.
 
@@ -432,7 +479,7 @@ Para comprobar que todo es correcto, visita la página http://localhost:3000. El
 {"notes":[]}
 ```
 
-### Controlador para las Notas
+### 9.2 Controlador para las Notas
 
 Instalaremos el módulo `slugify`.
 
@@ -454,7 +501,7 @@ module.exports = {
 };
 ```
 
-####  `Create`
+####  9.2.1 `Create`
 
 Para agregar una nota a nuestra base de datos, vamos a escribir una función de creación que incluirá el método de creación en nuestro modelo utilizando los datos contenidos en el objeto `payload` (payload son los datos enviados en la petición, por ejemplo, de un formulario).
 
@@ -518,7 +565,7 @@ Si ahora visitas http://localhost:3000, verás que ya devuelve esta nota:
 
 ![1549367312494](assets/1549367312494.png)
 
-#### `Read`
+#### 9.2.2 `Read`
 
 Vamos a crear la función `read`,  en `note.js`, que devolverá aquella nota cuyo `slug` sea el pasado como parámetro. En el caso del creado en el ejemplo, el slug será `primera-nota`. Para ello usamos el método `findOne`
 
@@ -568,7 +615,7 @@ Ahora ya podéis volver a realizar la petición `POST` desde Postman para que lo
 
 ![1549367909233](assets/1549367909233.png)
 
-#### `Update`
+#### 9.2.3 `Update`
 
 Para actualizar una nota, usamos el método de actualización en nuestro modelo. Se necesitan dos objetos, los nuevos valores que vamos a reemplazar y las opciones que contienen un filtro `where` con el slug de nota (que identifica la nota que vamos a actualizar).
 
@@ -588,8 +635,6 @@ Para actualizar una nota, usamos el método de actualización en nuestro modelo.
     },
 ```
 
-Después de actualizar nuestros datos, nuestra base de datos no devolverá la nota actualizada. Por lo tanto, debemos encontrar la nota modificada y devolverla al cliente, para que podamos mostrar la versión actualizada tan pronto como se realicen los cambios.
-
 Modificamos de nuevo `routes.js` para cambiar el `handler` por `Note.update`
 
 ```javascript
@@ -605,7 +650,7 @@ Modificamos de nuevo `routes.js` para cambiar el `handler` por `Note.update`
 
 Vamos a crear otra `Request` en Postman con el método `PUT`:
 
-La ruta debe ser, http://localhost:3000/note/primera-nota.
+La ruta debe ser, http://localhost:3000/note/primera-nota
 
 Y este es el resultado:
 
@@ -613,7 +658,7 @@ Y este es el resultado:
 
 
 
-#### `Delete`
+#### 9.2.4 `Delete`
 
 El controlador para `delete` eliminará la nota al proporcionar el slug al método `destroy` de nuestro modelo.
 
@@ -643,12 +688,12 @@ Y lo volvemos probar con Postman
 
 ![1549369832011](assets/1549369832011.png)
 
-## Crear las vistas
+## 10 Crear las vistas
 
-En este punto, nuestro sitio recibe llamadas HTTP y responde con objetos JSON.
+En este punto, nuestro sitio recibe llamadas `HTTP` y responde con objetos `JSON`.
 Para que sea útil para todos, tenemos que crear las páginas que representan nuestra información de una manera agradable.
 
-En este ejemplo, vamos a utilizar el lenguaje de plantillas Pug, aunque esto no es obligatorio y podemos usar [otros lenguajes](https://hapijs.com/tutorials/views) con Hapi.js. Además, vamos a utilizar el plugin [Vision](https://github.com/hapijs/vision) para habilitar la funcionalidad de visualización en nuestro servidor.
+En este ejemplo, vamos a utilizar el lenguaje de plantillas `Pug`, aunque esto no es obligatorio y podemos usar [otros lenguajes](https://hapijs.com/tutorials/views) con Hapi.js. Además, vamos a utilizar el plugin [Vision](https://github.com/hapijs/vision) para habilitar la funcionalidad de visualización en nuestro servidor.
 
 >  **Pug**
 >
@@ -660,24 +705,25 @@ Puedes instalar los paquetes mediante:
 npm install -s vision@5 pug
 ```
 
-### El componente Note
+### 10.1 El componente Note
 
 Primero, vamos a construir nuestro componente de notas que se reutilizará en nuestras vistas. Además, vamos a utilizar este componente en algunas de nuestras funciones de controlador para crear una nota sobre la marcha en el back-end. Esto simplificará la lógica en el cliente.
 
-Crea un archivo en `lib/views/components` llamado `note.pug` con el siguiente contenido:
+Crea un archivo en `lib/views/partials` llamado `note.pug` con el siguiente contenido:
 
 ```jade
 article
-  h2: a(href=`/note/${note.slug}`)= note.title
+  h2: a(href='note/' + note.slug)=note.title
   small Published on #{note.date}
   p= note.content
+  p This will be safe: #{note.slug}
 ```
 
 Está compuesto por el título de la nota, la fecha de publicación y el contenido de la nota.
 
 > **Cuidado**: Pug es sensible al espacio en blanco/sangría.
 
-### El layout base
+### 10.2 El layout base
 
 El diseño base contiene los elementos comunes de nuestras páginas; O en otras palabras, para nuestro ejemplo, todo lo que no es contenido. Crea un archivo en `lib/views/` llamado `layout.pug` con el siguiente contenido:
 
@@ -703,13 +749,13 @@ html(lang='en')
 
 El contenido de las otras páginas se cargará en lugar del contenido `block`. Además, ten en cuenta que mostraremos una variable `page` en el elemento `title` y una variable `description` en el elemento `meta (nombre = 'description')`. Vamos a crear esas variables en nuestras rutas más adelante.
 
-También incluimos, un archivo CSS en la parte superior de la página, así como tres archivos JS en la parte inferior. Estos son jQuery, jQuery Modal y un archivo `main.js` que contendrá todo nuestro código JS personalizado para el front-end. Asegúrate de descargar todos estos archivos (`static.zip`) [desde aquí](./assets/static.zip) y colocarlos en la carpeta correcta dentro del directorio `static/public/`.
+También incluimos, un archivo CSS en la parte superior de la página, así como tres archivos JS en la parte inferior. Estos son jQuery, jQuery Modal y un archivo `main.js` que contendrá todo nuestro código JS personalizado para el front-end. Asegúrate de descargar todos estos archivos (`static.zip`) desde el aula virtual y colocarlos en la carpeta correcta dentro del directorio `static/public/`.
 
 Vamos a hacerlos públicos en breve, en la sección [Servir archivos estáticos](#servir-archivos-estáticos).
 
-### La vista Home
+### 10.3 La vista Home
 
-![1565631048326](assets/1565631048326.png)
+![](assets/1565631048326.png)
 
 En nuestra página de inicio, mostraremos una lista con todas las notas en nuestra base de datos y un botón que mostrará una ventana modal con un formulario que nos permite crear una nueva nota a través de Ajax.
 Crea un archivo en `lib/views` llamado `home.pug` con el siguiente contenido:
@@ -727,7 +773,7 @@ block content
 
   main(container).notes-list
     each note in data.notes
-      include components/note
+      include partials/note
 
   form(action='/note' method='POST').note-form#note-form
     p: input(name='noteTitle' type='text' placeholder='Title…')
@@ -736,9 +782,26 @@ block content
     p._text-right: input(type='submit' value='Submit')
 ```
 
+Y ahora sólo queda modificar el controlador `home.js` 
+
+```java
+const Models = require('../models/');
+module.exports = async (request, h) => {
+    const notes = await Models.Note.findAll({
+        order: [['date', 'DESC']],
+    });
+
+    return h.view('home', {
+        data: { notes },
+        page: 'Home—Notes Board',
+        description: 'Welcome to my Notes Board',
+    });
+};
+```
 
 
-### La vista Note
+
+### 10.4 La vista Note
 
 ![1565631127987](assets/1565631127987.png)
 
@@ -760,7 +823,7 @@ block content
         li: a(href=`/note/${note.slug}/delete`) Delete
 
   main(container).note-content
-    include components/note
+    include partials/note
 
   form(action=`/note/${note.slug}` method='PUT').note-form#note-form
     p: input(name='noteTitle' type='text' value=note.title)
@@ -771,7 +834,7 @@ block content
 
 
 
-### Javascript en el cliente
+### 10.5 Javascript en el cliente
 
 Para crear y actualizar notas usamos la funcionalidad Ajax de jQuery.
 
@@ -814,7 +877,7 @@ No actualizamos ninguno de nuestros controladores en este capítulo, por lo que 
 
 Ahora que tenemos todas las vistas configuradas y admitidas por nuestro servidor, agregaremos rápidamente soporte para las vistas en el servidor y nos aseguraremos de que nuestro servidor sirva archivos estáticos.
 
-## Añadir soporte para vistas en el servidor
+## 11 Añadir soporte para vistas en el servidor
 
 Para utilizar nuestras vistas, debemos incluirlas en nuestros controladores y agregar la configuración requerida.
 En nuestro archivo `server.js`, importemos la utilidad Node `Path`, así como las plugins `Vision` y `Pug`, que instalamos anteriormente. Agrega lo siguiente a la parte superior del archivo:
@@ -854,7 +917,7 @@ En el código que hemos agregado, primero registramos el complemento `Vision` en
 
 Esto hará que nuestras vistas funcionen en el servidor, pero aún tenemos que declarar la vista que vamos a utilizar para cada ruta.
 
-### Configuración de la vista de inicio
+### 11.1 Configuración de la vista de inicio
 
 Abre el archivo `lib/controllers/home.js` y **reemplaza** `return {notes};` con lo siguiente:
 
@@ -887,7 +950,7 @@ Después de registrar el complemento de `Vision`, ahora tenemos un método de vi
 
 En los datos que proporcionamos a la vista, también incluimos el título de la página y una meta descripción para los motores de búsqueda.
 
-### Configuración de la vista de Nota:create
+### 11.2 Configuración de la vista de Nota:create
 
 En este momento, cada vez que creamos una nota, recibimos un objeto JSON enviado desde el servidor al cliente. Pero ya que estamos haciendo este proceso a través de Ajax, podemos enviar la nueva nota como HTML listo para ser agregado a la página. Para hacer esto, renderizamos el componente de nota con los datos que tenemos.
 
@@ -901,13 +964,13 @@ Luego, **reemplaza** la declaración de retorno del método de creación (`retur
 
 ```javascript
 const newNote = Pug.renderFile(
-    Path.join(__dirname, '../views/components/note.pug'),
+    Path.join(__dirname, '../views/partials/note.pug'),
     { note },
 );
 return newNote;
 ```
 
-### Servir archivos estáticos
+### 11.3 Servir archivos estáticos
 
 Los archivos JavaScript y CSS que estamos usando en el lado del cliente son atendidos por Hapi.js desde el directorio `static/public/`. Pero no sucederá automáticamente; tenemos que indicar al servidor que queremos definir esta carpeta como pública. Esto se hace usando el paquete `Inert`, que puede instalar con el siguiente comando:
 
@@ -948,9 +1011,9 @@ Ahora tenemos que definir la ruta en la que vamos a proporcionar los archivos es
 Puedes encontrar más información sobre cómo servir contenido estático en la documentación de [Hapi.js](https://hapijs.com/tutorials/serving-files)
 
 
-### Configuración de la vista de Note:read
+### 11.4 Configuración de la vista de Note:read
 
-Cuando visitamos  una página de notas, deberíamos obtener la plantilla de notas con el contenido de nuestra nota. Para hacer esto, debemos **reemplazar** la declaración de retorno del método `read` (`return {note}`) con lo siguiente:
+Cuando visitamos una página de notas, deberíamos obtener la plantilla de notas con el contenido de nuestra nota. Para hacer esto, debemos **reemplazar** la declaración de retorno del método `read` (`return {note}`) con lo siguiente:
 
 ```javascript
 return h.view('note', {
@@ -960,19 +1023,19 @@ return h.view('note', {
 })
 ```
 
-### Configuración de la vista de Note:update
+### 11.5 Configuración de la vista de Note:update
 
 Cada vez que actualizamos una nota, responderemos de manera similar a cuando creamos nuevas notas. **Reemplaza** la declaración de devolución del método de actualización (`return {note}`) con lo siguiente:
 
 ```javascript
 const updatedNote = Pug.renderFile(
-    Path.join(__dirname, '../views/components/note.pug'),
+    Path.join(__dirname, '../views/partials/note.pug'),
     { note },
 );
 return updatedNote;
 ```
 
-### Configuración de la vista de Note:delete
+### 11.6 Configuración de la vista de Note:delete
 
 La ruta para borrar, necesita un método `DELETE`. Pero para poder hacerlo desde el enlace de la aplicación, lo hemos de hacer por `GET`. Otra forma posible sería hacerlo registrando un método para el evento clic en el enlace y en este método usar una petición ajax con `method DELETE`.
 
